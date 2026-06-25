@@ -1,7 +1,8 @@
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import StatusIndicator from './StatusIndicator';
 import AnimatedLine from './AnimatedLine';
-import { aegisResolveFM } from '../utils/gsap';
+import { aegisResolveFM, gsap, useGSAP } from '../utils/gsap';
 
 const heroVariants = {
   hidden: { opacity: 0 },
@@ -32,8 +33,27 @@ const childVariants = {
 };
 
 export default function HeroSection() {
+  const container = useRef<HTMLElement>(null);
+
+  useGSAP(() => {
+    // Fade out the hero section entirely as the user scrolls down
+    // This prevents the passive "Awaiting the signal" text from colliding
+    // with the visceral "YOU ARE OVERLOADED" PressureHero text.
+    gsap.to(container.current, {
+      opacity: 0,
+      y: -50,
+      scrollTrigger: {
+        trigger: container.current,
+        start: 'top top',
+        end: 'bottom top',
+        scrub: true,
+      }
+    });
+  }, { scope: container });
+
   return (
     <section
+      ref={container}
       id="hero"
       className="relative min-h-screen flex flex-col items-center justify-center px-6"
     >

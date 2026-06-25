@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useSmoothScroll } from './hooks/useSmoothScroll';
+import { SectionProvider } from './hooks/useSectionContext';
+import SectionIndex from './components/SectionIndex';
 import CursorField from './components/CursorField';
 import HeroSection from './components/HeroSection';
 import PressureHero from './components/PressureHero';
@@ -49,7 +51,7 @@ export default function App() {
       )}
 
       {showContent && (
-        <>
+        <SectionProvider>
           {/* Cursor particle field — fixed, behind everything interactive */}
           <CursorField />
 
@@ -65,6 +67,8 @@ export default function App() {
             aria-hidden="true"
           />
 
+          <SectionIndex />
+
           {/* Main content */}
           <main className="relative z-10">
             <HeroSection />
@@ -73,7 +77,7 @@ export default function App() {
             <TimelineSection />
             <FinalSection />
           </main>
-        </>
+        </SectionProvider>
       )}
     </>
   );

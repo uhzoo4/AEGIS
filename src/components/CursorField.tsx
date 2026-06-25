@@ -73,6 +73,11 @@ export default function CursorField() {
   }, [initParticles]);
 
   useEffect(() => {
+    // Disable on touch devices to save performance
+    if (window.matchMedia('(pointer: coarse)').matches) return;
+
+    console.log("Canvas mounted");
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -82,10 +87,9 @@ export default function CursorField() {
     handleResize();
 
     let time = 0;
-    const isRunningRef = { current: true };
 
     const animate = () => {
-      if (!isRunningRef.current) return;
+      console.log("RAF");
 
       const width = window.innerWidth;
       const height = window.innerHeight;
@@ -100,8 +104,6 @@ export default function CursorField() {
 
       ctx.clearRect(0, 0, width, height);
       time += 0.008;
-
-      let movementEnergy = Math.abs(dx) + Math.abs(dy);
 
       // Update particles
       for (let i = 0; i < particles.length; i++) {
@@ -143,20 +145,12 @@ export default function CursorField() {
         p.vy *= DAMPING;
         p.x += p.vx;
         p.y += p.vy;
-        
-        movementEnergy += Math.abs(p.vx) + Math.abs(p.vy);
 
         // Wrap around edges
         if (p.x < -20) p.x = width + 20;
         if (p.x > width + 20) p.x = -20;
         if (p.y < -20) p.y = height + 20;
         if (p.y > height + 20) p.y = -20;
-      }
-
-      // If everything has settled (energy < threshold), stop expensive updates
-      if (isIdleRef.current && movementEnergy < 12.0) {
-        isRunningRef.current = false;
-        return;
       }
 
       // Draw connections (triangle-like mesh)
@@ -249,6 +243,7 @@ export default function CursorField() {
     };
 
     const handleMouseMove = (e: MouseEvent) => {
+      console.log("Mouse");
       mouseRef.current.x = e.clientX;
       mouseRef.current.y = e.clientY;
       isIdleRef.current = false;
@@ -257,22 +252,13 @@ export default function CursorField() {
       idleTimerRef.current = setTimeout(() => {
         isIdleRef.current = true;
       }, 1500);
-
-      if (!isRunningRef.current) {
-        isRunningRef.current = true;
-        rafRef.current = requestAnimationFrame(animate);
-      }
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        isRunningRef.current = false;
         cancelAnimationFrame(rafRef.current);
       } else {
-        if (!isRunningRef.current) {
-          isRunningRef.current = true;
-          rafRef.current = requestAnimationFrame(animate);
-        }
+        rafRef.current = requestAnimationFrame(animate);
       }
     };
 
@@ -280,14 +266,12 @@ export default function CursorField() {
     window.addEventListener('resize', handleResize);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    isRunningRef.current = true;
     rafRef.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      isRunningRef.current = false;
       cancelAnimationFrame(rafRef.current);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };

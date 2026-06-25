@@ -45,11 +45,6 @@ export default function PressureHero() {
   return (
     <section ref={container} id="pressure" className="relative min-h-screen flex flex-col justify-center px-6 md:px-12 lg:px-24 py-32 z-10">
       
-      {/* 1.3 The Bracketed/Mono "System Label" Device */}
-      <div className="mb-16 md:mb-24 font-mono text-xs md:text-sm text-text-tertiary tracking-[0.25em] uppercase opacity-70">
-        [ 01 // PRESSURE ]
-      </div>
-
       {/* Primary Copy: Display register, Cormorant Garamond */}
       <h2
         ref={headlineRef1}
