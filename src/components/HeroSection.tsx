@@ -1,6 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import StatusIndicator from './StatusIndicator';
 import AnimatedLine from './AnimatedLine';
 import { aegisResolveFM, gsap, useGSAP } from '../utils/gsap';
 
@@ -123,11 +122,6 @@ export default function HeroSection() {
         {/* Animated Line */}
         <motion.div variants={childVariants} className="w-full mt-10">
           <AnimatedLine />
-        </motion.div>
-
-        {/* Status Indicator */}
-        <motion.div variants={childVariants} className="mt-8">
-          <StatusIndicator />
         </motion.div>
       </motion.div>
 
