@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useSmoothScroll } from './hooks/useSmoothScroll';
 import CursorField from './components/CursorField';
 import HeroSection from './components/HeroSection';
+import PressureHero from './components/PressureHero';
 import WhySection from './components/WhySection';
 import TimelineSection from './components/TimelineSection';
 import FinalSection from './components/FinalSection';
@@ -67,6 +68,7 @@ export default function App() {
           {/* Main content */}
           <main className="relative z-10">
             <HeroSection />
+            <PressureHero />
             <WhySection />
             <TimelineSection />
             <FinalSection />
