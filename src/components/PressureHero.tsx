@@ -1,13 +1,22 @@
 import { useRef } from 'react';
-import { gsap, SplitText, useGSAP } from '../utils/gsap';
+import { gsap, SplitText, useGSAP, ScrollTrigger } from '../utils/gsap';
+import { useSectionContext } from '../hooks/useSectionContext';
 
 export default function PressureHero() {
   const container = useRef<HTMLDivElement>(null);
   const headlineRef1 = useRef<HTMLHeadingElement>(null);
   const headlineRef2 = useRef<HTMLHeadingElement>(null);
+  const { setActiveSection } = useSectionContext();
 
   useGSAP(() => {
     if (!headlineRef1.current || !headlineRef2.current) return;
+
+    ScrollTrigger.create({
+      trigger: container.current,
+      start: 'top center',
+      onEnter: () => setActiveSection('pressure'),
+      onEnterBack: () => setActiveSection('pressure'),
+    });
 
     // Use SplitText for headline-grade reveals as per aegis_design_analysis.md Rules
     // Ensure mask: true behavior (we pass it directly; if SplitText version requires wrapper, 

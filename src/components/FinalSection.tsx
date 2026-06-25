@@ -1,5 +1,7 @@
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
-import { revealVariants, staggerContainer, viewportConfig } from '../hooks/useScrollReveal';
+import { gsap, SplitText, useGSAP, ScrollTrigger } from '../utils/gsap';
+import { useSectionContext } from '../hooks/useSectionContext';
 import { aegisResolveFM } from '../utils/gsap';
 
 const words = ['Build.', 'Adapt.', 'Awaken.'];
@@ -12,46 +14,93 @@ const metadata = [
 ];
 
 export default function FinalSection() {
+  const containerRef = useRef<HTMLElement>(null);
+  const textContainerRef = useRef<HTMLDivElement>(null);
+  const { setActiveSection } = useSectionContext();
+
+  useGSAP(() => {
+    if (!containerRef.current || !textContainerRef.current) return;
+
+    // Broadcast active section for the SectionIndex
+    ScrollTrigger.create({
+      trigger: containerRef.current,
+      start: 'top center',
+      onEnter: () => setActiveSection('recovery'),
+      onEnterBack: () => setActiveSection('recovery'),
+    });
+
+    // SplitText for headline-grade reveals per AEGIS architectural rules (mask: true)
+    const wordElements = gsap.utils.toArray('.manifesto-word') as HTMLElement[];
+    const splits = wordElements.map(
+      (el) => new SplitText(el, { type: 'lines', linesClass: 'line', mask: true } as any)
+    );
+
+    // Initial state
+    splits.forEach(split => {
+      gsap.set(split.lines, { yPercent: 100 });
+    });
+
+    // Sequence the manifesto words with the deep, calming aegis-resolve ease
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: 'top 60%',
+        toggleActions: 'play reverse play reverse',
+      }
+    });
+
+    splits.forEach((split, index) => {
+      tl.to(split.lines, {
+        yPercent: 0,
+        duration: 1.2,
+        ease: 'aegis-resolve',
+        stagger: 0.1
+      }, index * 0.4); // Overlapping sequence
+    });
+
+    return () => {
+      splits.forEach(split => split.revert());
+    };
+  }, { scope: containerRef });
+
   return (
     <section
+      ref={containerRef}
       id="final"
-      className="section-padding min-h-screen flex flex-col items-center justify-center"
+      className="section-padding min-h-screen flex flex-col items-center justify-center relative z-10"
     >
       {/* Manifesto */}
-      <motion.div
+      <div
+        ref={textContainerRef}
         className="flex flex-col items-center text-center mb-24"
-        variants={staggerContainer}
-        initial="hidden"
-        whileInView="visible"
-        viewport={viewportConfig}
       >
         {words.map((word) => (
-          <motion.span
+          <span
             key={word}
-            variants={revealVariants}
-            className="font-serif font-light tracking-wide block"
+            className="manifesto-word font-light tracking-wide block"
             style={{
+              fontFamily: '"Cormorant Garamond", serif',
               fontSize: 'clamp(2.5rem, 6vw, 7rem)',
               lineHeight: 1.3,
               color: 'var(--color-text-primary)',
             }}
           >
             {word}
-          </motion.span>
+          </span>
         ))}
-      </motion.div>
+      </div>
 
-      {/* Metadata */}
+      {/* Metadata - Keeps Framer Motion since it is secondary, state-bound, and not headline-grade */}
       <motion.div
         className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
-        variants={revealVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.5 }}
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-10%' }}
+        transition={{ duration: 1.2, ease: aegisResolveFM, delay: 1 }}
       >
         {metadata.map((item, index) => (
           <span key={item} className="flex items-center gap-6">
-            <span className="text-xs md:text-sm text-text-secondary tracking-widest uppercase font-light">
+            <span className="text-xs md:text-sm text-text-secondary tracking-widest uppercase font-light font-mono">
               {item}
             </span>
             {index < metadata.length - 1 && (
@@ -67,7 +116,7 @@ export default function FinalSection() {
         initial={{ opacity: 0, scaleX: 0 }}
         whileInView={{ opacity: 1, scaleX: 1 }}
         viewport={{ once: true }}
-        transition={{ duration: 1.5, ease: aegisResolveFM }}
+        transition={{ duration: 1.5, ease: aegisResolveFM, delay: 1.2 }}
       />
     </section>
   );

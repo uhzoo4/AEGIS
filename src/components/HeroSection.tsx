@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useRef, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import StatusIndicator from './StatusIndicator';
 import AnimatedLine from './AnimatedLine';
 import { aegisResolveFM, gsap, useGSAP } from '../utils/gsap';
@@ -32,8 +32,28 @@ const childVariants = {
   },
 };
 
+const SCENES = [
+  { tagline: "Awaiting the signal.", sub: "System in standby mode." },
+  { tagline: "Scanning environment.", sub: "Parsing calendar density and workload." },
+  { tagline: "Signal detected.", sub: "Collision imminent. Scroll to intercept." }
+];
+
 export default function HeroSection() {
   const container = useRef<HTMLElement>(null);
+  const [sceneIndex, setSceneIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSceneIndex(prev => {
+        if (prev >= SCENES.length - 1) {
+          clearInterval(timer);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 3500);
+    return () => clearInterval(timer);
+  }, []);
 
   useGSAP(() => {
     // Fade out the hero section entirely as the user scrolls down
@@ -76,22 +96,29 @@ export default function HeroSection() {
           AEGIS
         </motion.h1>
 
-        {/* Tagline */}
-        <motion.p
-          variants={childVariants}
-          className="mt-8 text-lg md:text-xl font-light tracking-wide text-text-secondary"
-          style={{ fontFamily: 'var(--font-sans)' }}
-        >
-          Awaiting the signal.
-        </motion.p>
-
-        {/* Sub-text */}
-        <motion.p
-          variants={childVariants}
-          className="mt-4 text-sm text-text-tertiary tracking-wider"
-        >
-          Official problem statement releases soon.
-        </motion.p>
+        {/* Scene Cycling Text */}
+        <div className="h-24 mt-8 flex flex-col items-center justify-start relative">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={sceneIndex}
+              initial={{ opacity: 0, y: 10, filter: 'blur(5px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -10, filter: 'blur(5px)' }}
+              transition={{ duration: 0.8, ease: aegisResolveFM }}
+              className="flex flex-col items-center absolute top-0"
+            >
+              <p
+                className="text-lg md:text-xl font-light tracking-wide text-text-secondary"
+                style={{ fontFamily: 'var(--font-sans)' }}
+              >
+                {SCENES[sceneIndex].tagline}
+              </p>
+              <p className="mt-4 text-sm text-text-tertiary tracking-wider">
+                {SCENES[sceneIndex].sub}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         {/* Animated Line */}
         <motion.div variants={childVariants} className="w-full mt-10">

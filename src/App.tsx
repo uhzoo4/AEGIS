@@ -5,6 +5,9 @@ import SectionIndex from './components/SectionIndex';
 import CursorField from './components/CursorField';
 import HeroSection from './components/HeroSection';
 import PressureHero from './components/PressureHero';
+import SignalTrack from './components/SignalTrack';
+import ForecastScene from './components/ForecastScene';
+import InterventionPreview from './components/InterventionPreview';
 import WhySection from './components/WhySection';
 import TimelineSection from './components/TimelineSection';
 import FinalSection from './components/FinalSection';
@@ -73,6 +76,9 @@ export default function App() {
           <main className="relative z-10">
             <HeroSection />
             <PressureHero />
+            <SignalTrack />
+            <ForecastScene />
+            <InterventionPreview />
             <WhySection />
             <TimelineSection />
             <FinalSection />
