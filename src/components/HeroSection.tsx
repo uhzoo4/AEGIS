@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import StatusIndicator from './StatusIndicator';
 import AnimatedLine from './AnimatedLine';
+import { aegisResolveFM } from '../utils/gsap';
 
 const heroVariants = {
   hidden: { opacity: 0 },
@@ -25,7 +26,7 @@ const childVariants = {
     filter: 'blur(0px)',
     transition: {
       duration: 1.2,
-      ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
+      ease: aegisResolveFM,
     },
   },
 };

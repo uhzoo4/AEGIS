@@ -81,55 +81,48 @@ export default function CursorField() {
 
     handleResize();
 
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseRef.current.x = e.clientX;
-      mouseRef.current.y = e.clientY;
-      isIdleRef.current = false;
-
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-      idleTimerRef.current = setTimeout(() => {
-        isIdleRef.current = true;
-      }, 1500);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('resize', handleResize);
-
     let time = 0;
+    const isRunningRef = { current: true };
 
     const animate = () => {
+      if (!isRunningRef.current) return;
+
       const width = window.innerWidth;
       const height = window.innerHeight;
       const particles = particlesRef.current;
       const mouse = mouseRef.current;
 
       // Smooth mouse interpolation
-      mouse.smoothX += (mouse.x - mouse.smoothX) * 0.08;
-      mouse.smoothY += (mouse.y - mouse.smoothY) * 0.08;
+      const dx = mouse.x - mouse.smoothX;
+      const dy = mouse.y - mouse.smoothY;
+      mouse.smoothX += dx * 0.08;
+      mouse.smoothY += dy * 0.08;
 
       ctx.clearRect(0, 0, width, height);
       time += 0.008;
+
+      let movementEnergy = Math.abs(dx) + Math.abs(dy);
 
       // Update particles
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
         // Distance to smooth mouse
-        const dx = mouse.smoothX - p.x;
-        const dy = mouse.smoothY - p.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const pdx = mouse.smoothX - p.x;
+        const pdy = mouse.smoothY - p.y;
+        const dist = Math.sqrt(pdx * pdx + pdy * pdy);
 
         if (!isIdleRef.current && dist < ATTRACTION_RADIUS) {
           // Attraction
           const force = ATTRACTION_FORCE * (1 - dist / ATTRACTION_RADIUS);
-          p.vx += dx * force * 0.01;
-          p.vy += dy * force * 0.01;
+          p.vx += pdx * force * 0.01;
+          p.vy += pdy * force * 0.01;
 
           // Repulsion when very close
           if (dist < REPULSION_RADIUS && dist > 0) {
             const repel = REPULSION_FORCE * (1 - dist / REPULSION_RADIUS);
-            p.vx -= (dx / dist) * repel;
-            p.vy -= (dy / dist) * repel;
+            p.vx -= (pdx / dist) * repel;
+            p.vy -= (pdy / dist) * repel;
           }
         }
 
@@ -150,6 +143,8 @@ export default function CursorField() {
         p.vy *= DAMPING;
         p.x += p.vx;
         p.y += p.vy;
+        
+        movementEnergy += Math.abs(p.vx) + Math.abs(p.vy);
 
         // Wrap around edges
         if (p.x < -20) p.x = width + 20;
@@ -158,14 +153,20 @@ export default function CursorField() {
         if (p.y > height + 20) p.y = -20;
       }
 
+      // If everything has settled (energy < threshold), stop expensive updates
+      if (isIdleRef.current && movementEnergy < 12.0) {
+        isRunningRef.current = false;
+        return;
+      }
+
       // Draw connections (triangle-like mesh)
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const a = particles[i];
           const b = particles[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+          const cdx = a.x - b.x;
+          const cdy = a.y - b.y;
+          const dist = Math.sqrt(cdx * cdx + cdy * cdy);
 
           if (dist < CONNECTION_DISTANCE) {
             const alpha = (1 - dist / CONNECTION_DISTANCE) * 0.12;
@@ -179,7 +180,7 @@ export default function CursorField() {
         }
       }
 
-      // Draw filled triangles (between close triplets — sparse for perf)
+      // Draw filled triangles
       for (let i = 0; i < particles.length; i += 3) {
         if (i + 2 >= particles.length) break;
         const a = particles[i];
@@ -208,7 +209,6 @@ export default function CursorField() {
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
-        // Glow
         const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
         gradient.addColorStop(0, `rgba(${SIGNAL_COLOR.r}, ${SIGNAL_COLOR.g}, ${SIGNAL_COLOR.b}, ${p.opacity * 0.4})`);
         gradient.addColorStop(1, `rgba(${SIGNAL_COLOR.r}, ${SIGNAL_COLOR.g}, ${SIGNAL_COLOR.b}, 0)`);
@@ -218,7 +218,6 @@ export default function CursorField() {
         ctx.fillStyle = gradient;
         ctx.fill();
 
-        // Core
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(${SIGNAL_COLOR.r}, ${SIGNAL_COLOR.g}, ${SIGNAL_COLOR.b}, ${p.opacity})`;
@@ -249,11 +248,46 @@ export default function CursorField() {
       rafRef.current = requestAnimationFrame(animate);
     };
 
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseRef.current.x = e.clientX;
+      mouseRef.current.y = e.clientY;
+      isIdleRef.current = false;
+
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => {
+        isIdleRef.current = true;
+      }, 1500);
+
+      if (!isRunningRef.current) {
+        isRunningRef.current = true;
+        rafRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        isRunningRef.current = false;
+        cancelAnimationFrame(rafRef.current);
+      } else {
+        if (!isRunningRef.current) {
+          isRunningRef.current = true;
+          rafRef.current = requestAnimationFrame(animate);
+        }
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('resize', handleResize);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    isRunningRef.current = true;
     rafRef.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      isRunningRef.current = false;
       cancelAnimationFrame(rafRef.current);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };

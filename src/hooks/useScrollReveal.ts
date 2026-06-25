@@ -1,4 +1,5 @@
 import { type Variants } from 'framer-motion';
+import { aegisResolveFM } from '../utils/gsap';
 
 /** Standard reveal animation — fade in from below with blur dissolve */
 export const revealVariants: Variants = {
@@ -13,7 +14,7 @@ export const revealVariants: Variants = {
     filter: 'blur(0px)',
     transition: {
       duration: 0.9,
-      ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
+      ease: aegisResolveFM,
     },
   },
 };

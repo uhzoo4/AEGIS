@@ -37,12 +37,34 @@ export function useMousePosition(lerpFactor = 0.08, idleTimeout = 1500): MousePo
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
+    const isRunningRef = { current: true };
+
     const animate = () => {
+      if (!isRunningRef.current) return;
+
       const { x: targetX, y: targetY } = rawRef.current;
       const smooth = smoothRef.current;
 
-      smooth.x += (targetX - smooth.x) * lerpFactor;
-      smooth.y += (targetY - smooth.y) * lerpFactor;
+      const dx = targetX - smooth.x;
+      const dy = targetY - smooth.y;
+
+      // Epsilon check: if movement energy falls below threshold, snap and pause
+      if (isIdleRef.current && Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) {
+        smooth.x = targetX;
+        smooth.y = targetY;
+        setState({
+          x: targetX,
+          y: targetY,
+          smoothX: targetX,
+          smoothY: targetY,
+          isIdle: true,
+        });
+        isRunningRef.current = false;
+        return;
+      }
+
+      smooth.x += dx * lerpFactor;
+      smooth.y += dy * lerpFactor;
 
       setState({
         x: rawRef.current.x,
@@ -55,10 +77,40 @@ export function useMousePosition(lerpFactor = 0.08, idleTimeout = 1500): MousePo
       rafRef.current = requestAnimationFrame(animate);
     };
 
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        isRunningRef.current = false;
+        cancelAnimationFrame(rafRef.current);
+      } else {
+        if (!isRunningRef.current) {
+          isRunningRef.current = true;
+          rafRef.current = requestAnimationFrame(animate);
+        }
+      }
+    };
+    
+    // Patch handleMouseMove to resume animation
+    const originalHandleMouseMove = handleMouseMove;
+    window.removeEventListener('mousemove', originalHandleMouseMove);
+    
+    const newHandleMouseMove = (e: MouseEvent) => {
+      originalHandleMouseMove(e);
+      if (!isRunningRef.current) {
+        isRunningRef.current = true;
+        rafRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    window.addEventListener('mousemove', newHandleMouseMove, { passive: true });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    isRunningRef.current = true;
     rafRef.current = requestAnimationFrame(animate);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousemove', newHandleMouseMove);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      isRunningRef.current = false;
       cancelAnimationFrame(rafRef.current);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
