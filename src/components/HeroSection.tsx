@@ -95,33 +95,47 @@ export default function HeroSection() {
           AEGIS
         </motion.h1>
 
-        {/* Scene Cycling Text */}
-        <div className="h-24 mt-8 flex flex-col items-center justify-start relative">
+        {/* Scene Cycling Text - Editorial Right Aligned */}
+        <div className="h-24 mt-12 w-full max-w-[90vw] md:max-w-3xl flex justify-end relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={sceneIndex}
-              initial={{ opacity: 0, y: 10, filter: 'blur(5px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -10, filter: 'blur(5px)' }}
-              transition={{ duration: 0.8, ease: aegisResolveFM }}
-              className="flex flex-col items-center absolute top-0"
+              className="flex flex-col items-end text-right absolute top-0 right-0 md:pr-8"
             >
-              <p
-                className="text-lg md:text-xl font-light tracking-wide text-text-secondary"
-                style={{ fontFamily: 'var(--font-sans)' }}
-              >
-                {SCENES[sceneIndex].tagline}
-              </p>
-              <p className="mt-4 text-sm text-text-tertiary tracking-wider">
-                {SCENES[sceneIndex].sub}
-              </p>
+              {/* Tagline */}
+              <div className="overflow-hidden">
+                <motion.p
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "-100%" }}
+                  transition={{ duration: 1, ease: aegisResolveFM }}
+                  className="text-lg md:text-xl font-light tracking-wide text-signal uppercase"
+                  style={{ fontFamily: 'var(--font-sans)', letterSpacing: '0.1em' }}
+                >
+                  {SCENES[sceneIndex].tagline}
+                </motion.p>
+              </div>
+              {/* Sub-text */}
+              <div className="overflow-hidden mt-3">
+                <motion.p
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "-100%" }}
+                  transition={{ duration: 1, ease: aegisResolveFM, delay: 0.1 }}
+                  className="text-sm md:text-base text-text-tertiary tracking-widest font-mono"
+                >
+                  {SCENES[sceneIndex].sub}
+                </motion.p>
+              </div>
             </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* Animated Line */}
-        <motion.div variants={childVariants} className="w-full mt-10">
-          <AnimatedLine />
+        {/* Animated Line - Shifted to match right alignment */}
+        <motion.div variants={childVariants} className="w-full max-w-[90vw] md:max-w-3xl flex justify-end mt-16">
+          <div className="w-1/3 md:w-1/4 pr-8">
+            <AnimatedLine />
+          </div>
         </motion.div>
       </motion.div>
 
