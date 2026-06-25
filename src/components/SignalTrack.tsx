@@ -2,23 +2,17 @@ import { useRef } from 'react';
 import { gsap, SplitText, useGSAP, ScrollTrigger } from '../utils/gsap';
 import { useSectionContext } from '../hooks/useSectionContext';
 
-const SIGNALS = [
-  'COGNITIVE OVERLOAD DETECTED',
-  'DEADLINE COLLISION: 48 HOURS',
-  'MOMENTUM LOSS',
-  'REDUCED AVAILABLE TIME',
-  'DECLINING ENERGY METRICS'
-];
+const NOISE_WORDS = ['Physics', 'Hackathon', 'Chemistry', 'Assignments', 'Sleep', 'Deadlines', 'Projects', 'Exams'];
 
 export default function SignalTrack() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
+  const noiseRef = useRef<HTMLDivElement>(null);
+  const signalRef = useRef<HTMLDivElement>(null);
   const { setActiveSection } = useSectionContext();
 
   useGSAP(() => {
-    if (!containerRef.current || !trackRef.current) return;
+    if (!containerRef.current || !noiseRef.current || !signalRef.current) return;
 
-    // Broadcast active section when this section enters the viewport
     ScrollTrigger.create({
       trigger: containerRef.current,
       start: 'top center',
@@ -26,17 +20,23 @@ export default function SignalTrack() {
       onEnterBack: () => setActiveSection('understanding'),
     });
 
-    // Get all signal rows
-    const signals = gsap.utils.toArray('.signal-row') as HTMLElement[];
-
-    // Split text for each signal for precise mask reveals
-    const splits = signals.map(signal => 
-      new SplitText(signal, { type: 'lines', linesClass: 'line', mask: true } as any)
-    );
+    const noiseElements = gsap.utils.toArray('.noise-word') as HTMLElement[];
+    const splitSignal = new SplitText(signalRef.current.querySelector('h2'), { type: 'words,chars', charsClass: 'char' } as any);
 
     // Initial state
-    splits.forEach(split => {
-      gsap.set(split.lines, { yPercent: 100, opacity: 0 });
+    gsap.set(noiseElements, { opacity: 0 });
+    gsap.set(splitSignal.chars, { opacity: 0, scale: 0.8, filter: 'blur(10px)' });
+    gsap.set('.signal-sub', { opacity: 0, y: 20 });
+    gsap.set(signalRef.current, { opacity: 0 });
+
+    // Scatter noise words randomly across the screen initially
+    noiseElements.forEach((el) => {
+      gsap.set(el, {
+        x: (Math.random() - 0.5) * window.innerWidth * 0.8,
+        y: (Math.random() - 0.5) * window.innerHeight * 0.8,
+        scale: 0.5 + Math.random() * 1.5,
+        rotation: (Math.random() - 0.5) * 45,
+      });
     });
 
     const tl = gsap.timeline({
@@ -49,50 +49,72 @@ export default function SignalTrack() {
       }
     });
 
-    // Animate signals in sequence using the calming resolve ease 
-    // to contrast with the anxiety of PressureHero
-    splits.forEach((split, index) => {
-      tl.to(split.lines, {
-        yPercent: 0,
-        opacity: index === 0 ? 1 : 0.4, // Highlight first, fade others slightly
-        duration: 1,
-        ease: 'aegis-resolve',
-        stagger: 0.1
-      }, index * 0.4); // Overlapping sequence
-      
-      // Dim the previous signal as the new one comes in
-      if (index > 0) {
-        tl.to(splits[index - 1].lines, {
-          opacity: 0.15,
-          duration: 0.5,
-          ease: 'aegis-resolve'
-        }, '<');
-      }
-    });
+    // 1. Fade in the scattered noise words
+    tl.to(noiseElements, {
+      opacity: 0.6,
+      duration: 1,
+      ease: 'aegis-resolve'
+    })
+    // 2. Collapse all noise into the center
+    .to(noiseElements, {
+      x: 0,
+      y: 0,
+      scale: 0,
+      rotation: 0,
+      opacity: 0,
+      duration: 2,
+      ease: 'aegis-pressure',
+      stagger: { each: 0.05, from: 'edges' }
+    })
+    // 3. Reveal the structured signal from the collapse point
+    .set(signalRef.current, { opacity: 1 })
+    .to(splitSignal.chars, {
+      opacity: 1,
+      scale: 1,
+      filter: 'blur(0px)',
+      duration: 2,
+      ease: 'aegis-resolve',
+      stagger: 0.05
+    }, '-=0.5')
+    .to('.signal-sub', {
+      opacity: 1,
+      y: 0,
+      duration: 1,
+      ease: 'aegis-resolve'
+    }, '-=1');
 
     return () => {
-      splits.forEach(split => split.revert());
+      splitSignal.revert();
     };
   }, { scope: containerRef });
 
   return (
-    <section ref={containerRef} id="understanding" className="relative min-h-screen flex flex-col justify-center px-6 md:px-12 lg:px-24 bg-void z-10">
+    <section ref={containerRef} id="understanding" className="relative min-h-screen flex flex-col items-center justify-center px-6 md:px-12 bg-void z-10 overflow-hidden">
       
-      {/* Narrative bridge: System acknowledges the noise */}
-      <div className="absolute top-32 max-w-sm text-text-secondary font-light text-lg md:text-xl leading-relaxed tracking-wide opacity-80" style={{ fontFamily: 'var(--font-sans)' }}>
-        We see the collision. Parsing external noise into structured signal.
-      </div>
-
-      {/* Signal Track */}
-      <div ref={trackRef} className="mt-24 flex flex-col gap-6 md:gap-8 border-l border-signal/20 pl-6 md:pl-12 py-8">
-        {SIGNALS.map((signal, i) => (
+      {/* Noise Field */}
+      <div ref={noiseRef} className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        {NOISE_WORDS.map((word, i) => (
           <div 
             key={i} 
-            className="signal-row font-mono text-lg md:text-2xl lg:text-3xl tracking-[0.15em] uppercase text-signal"
+            className="noise-word absolute font-mono text-xl md:text-4xl text-text-secondary opacity-0 whitespace-nowrap"
+            style={{ fontFamily: 'var(--font-sans)', color: 'var(--color-signal)' }}
           >
-            {signal}
+            {word}
           </div>
         ))}
+      </div>
+
+      {/* Structured Signal */}
+      <div ref={signalRef} className="z-10 text-center pointer-events-none w-full">
+        <h2 className="font-mono text-3xl md:text-5xl lg:text-6xl tracking-[0.1em] md:tracking-[0.2em] uppercase text-signal leading-tight max-w-4xl mx-auto">
+          COGNITIVE OVERLOAD DETECTED
+        </h2>
+        <div className="signal-sub">
+          <div className="mt-8 w-24 h-px bg-signal/50 mx-auto" />
+          <p className="mt-4 text-sm text-text-tertiary tracking-widest uppercase font-mono">
+            Noise parsed. Trajectory mapped.
+          </p>
+        </div>
       </div>
 
     </section>

@@ -23,11 +23,11 @@ const CONNECTION_DISTANCE = 160;
 const DRIFT_SPEED = 0.3;
 
 const SECTION_COLORS: Record<SectionState, { r: number, g: number, b: number }> = {
-  pressure: { r: 212, g: 165, b: 116 },      // #D4A574 (Anxious amber)
-  understanding: { r: 127, g: 219, b: 202 }, // #7FDBCA (Clinical teal)
-  prediction: { r: 204, g: 24, b: 24 },      // #CC1818 (High Risk Crimson)
-  intervention: { r: 127, g: 219, b: 202 },  // #7FDBCA (Clinical teal)
-  recovery: { r: 240, g: 248, b: 255 }       // Alice Blue (Calm)
+  pressure: { r: 255, g: 176, b: 0 },       // Amber
+  understanding: { r: 0, g: 255, b: 255 },  // Cyan
+  prediction: { r: 255, g: 0, b: 0 },       // Red
+  intervention: { r: 20, g: 184, b: 166 },  // Teal
+  recovery: { r: 255, g: 255, b: 255 }      // White
 };
 
 export default function CursorField() {
